@@ -1,46 +1,26 @@
 #ifndef PID_H
 #define PID_H
 
-class PID {
+class PID_Controller 
+{
 public:
-  /*
-  * Errors
-  */
-  double p_error;
-  double i_error;
-  double d_error;
+    //
+    // Initialize with user-defined control coefficients:
+    //   Kp = proportional gain
+    //   Ki = integral gain
+    //   Kd = derivative gain
+    // 
+    PID_Controller(double Kp, double Ki, double Kd);
 
-  /*
-  * Coefficients
-  */ 
-  double Kp;
-  double Ki;
-  double Kd;
+    // Compute new correction, based on current error and elapsed time
+    double TrackError(double cur_error, double dt);
 
-  /*
-  * Constructor
-  */
-  PID();
+private:
+    // PID gain coefficients
+    double Kp_, Ki_, Kd_; 
 
-  /*
-  * Destructor.
-  */
-  virtual ~PID();
-
-  /*
-  * Initialize PID.
-  */
-  void Init(double Kp, double Ki, double Kd);
-
-  /*
-  * Update the PID error variables given cross track error.
-  */
-  void UpdateError(double cte);
-
-  /*
-  * Calculate the total PID error.
-  */
-  double TotalError();
+    double int_error_;  // running estimate of error integral
+    double prev_error_; // previous error value
 };
 
 #endif /* PID_H */
