@@ -3,6 +3,41 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+## PID Control Project Overview
+
+The project entails implementing a plug-in algorithm for a car driving simulator, where the objective is to control the steering angle and speed so that the car stays driving safely within the road (as opposed to driving off the road). The plug-in receives periodic messages with current speed, heading angle and distance from center of road, and responds with messages that specify steering angle and acceleration.
+
+The plug-in is required to utilize 1 or more PID Control based algorithms for computing the steering angle and/or acceleration values.
+
+## Explanation of PID Control
+
+PID Control is a straightforward and very popular approach for implementing a control systems feedback loop. The idea of PID Control is to regularly receive error measurements of from the control system, and respond with error correction values that drive the system toward zero error in an efficient and stable manner.
+
+PID stands for "Proportional-Integral-Derivative" and represents the basic strategy of the algorithm. PID Control decomposes the input error into 3 component parts--the proportional, integral and derivative terms--and computes the correction as a weighted sum of these terms.
+  * The proportional term is simply the current error measurement.
+  * The integral term is an accumulation of the error over time.
+  * The derivative term is the rate of change of the error.
+
+The algorithm is parameterized by the 3 coefficients for the weighted sum (called PID gain parameters). Algorithm effectiveness is highly sensitive to these parameters. Appropriate parameter settings for a given control system are non-obvious, and may require a significant amount of manual and/or automated tuning.
+
+How does a weighted sum of proportional, integral and derivative terms result in an effective error correction?
+  * The primary correction comes from the proportional term. A (negative) scalar multiple of the current error directly "pushes" the error back toward zero. The responsiveness of the PID controller to error magnitude scales directly with proportional gain--larger gain makes the controller correct faster.
+  * The problem with strictly proportional control is latency. In general, using enough proportional gain to adequately correct the system "overshoots" the error and results in oscillatory behavior--the controller is efficient but not stable. Achieving efficiency _and_ stability requires adding another term to the correction that damps or slows the proportional correction. This is the role of the derivative term--a scalar multiple of the rate of change (derivative) between the current error and the previous error is subtracted from the correction. An appropriate selection of derivative gain (for a given proportional gain) serves to offset the proportional correction just enough to make it stable.
+  * Neither proportional nor derivative gain account for any kind of consistent bias in the system. This is what the integral term comes into play. A running total error estimate is kept by the PID controller, and a scalar multiple of this total error is added to the correction to counteract the effect of any bias in the system.
+
+## Parameter Tuning
+
+My process for PID parameter tuning was relatively simple and entirely manual. I started with zero derivative & integral gain, and a very small proportional gain. I gradually increased proportional and derivative gain, looking for just enough proportional gain to steer the car through the corners, and just enough derivative gain to keep the car from getting into too much oscillation.
+
+After I was satisfied with the proportional and derivative gains, I added a very small integral gain to counteract the very small steering bias in the system. I really didn't notice much effect from the integral gain, but left it at a small value.
+
+## Implementation Notes
+
+Far more challenging than parameter tuning was the issue of dealing with large fluctuations in the update rate from the simulator. I attempted to make my plug-in robust to the following update-rate related factors:
+  * I found that the update rate varied greatly for different window sizes of the simulator. Smaller sizes updated much more frequently.
+  * I found that the higher the update rate, the faster the car could be driven and remain in control (relatively free from oscillations).
+  * I ended up keeping track of the update rate from my plug-in, and using an additional PID controller to scale the desired speed up or down, depending on the recent update rate. In this way I could even adjust speed when the update rate fluctuated during a session (which happened a lot).
+
 ## Dependencies
 
 * cmake >= 3.5
@@ -36,63 +71,3 @@ There's an experimental patch for windows in this [PR](https://github.com/udacit
 4. Run it: `./pid`. 
 
 Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-

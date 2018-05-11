@@ -34,11 +34,6 @@ std::string hasData(std::string s) {
     return "";
 }
 
-inline double clamp(double x, double lo, double hi)
-{
-    return std::max(lo, std::min(x, hi));
-}
-
 //
 // MessageTimes class for capturing series of time measurements and reporting
 // last time delta and/or moving average time delta.
@@ -68,8 +63,8 @@ public:
         return deltas_.front();
     }
 
-    // Report average of last N time delta's
-    double AverageDelta(size_t count) const {
+    // Report moving average of last N time delta's
+    double MovingAverageDelta(size_t count) const {
         count = std::min(count, deltas_.size());
         return accumulate(deltas_.begin(), deltas_.begin() + count, 0.0) / count;
     }
@@ -81,18 +76,21 @@ private:
 
 double calc_target_speed(double delta_t) {
     // target speed = linear function of time delta
-    return std::max(20.0 - 16*delta_t, 5.0);
+    return std::max(32.0 * (1.0-delta_t), 5.0);
 }
 
-static const double MAX_TURN_ANGLE = 25.0;
+inline double clamp(double x, double lo, double hi)
+{
+    return std::max(lo, std::min(x, hi));
+}
 
 // PID gain coefficients for position controller
-static const double Kp_POS = 0.32;
-static const double Ki_POS = 0.0002;
-static const double Kd_POS = 0.54;
+static const double Kp_STEER = 0.1;
+static const double Ki_STEER = 0.0005;
+static const double Kd_STEER = 0.12;
 
 // PID gain coefficients for speed controller
-static const double Kp_SPEED = 0.05;
+static const double Kp_SPEED = 0.04;
 static const double Ki_SPEED = 0.0005;
 static const double Kd_SPEED = 0.0;
 
@@ -103,7 +101,7 @@ int main()
     MessageTimes msg_times;
 
     // PID position controller (to control steering angle)
-    PID_Controller pid_position(Kp_POS, Ki_POS, Kd_POS);
+    PID_Controller pid_steering(Kp_STEER, Ki_STEER, Kd_STEER);
 
     // PID speed controller
     PID_Controller pid_speed(Kp_SPEED, Ki_SPEED, Kd_SPEED);
@@ -145,7 +143,7 @@ int main()
         if (!is_first_message)
         {
             delta_t = msg_times.LastDelta();  // seconds since last message
-            avg_delta_t = msg_times.AverageDelta(5);
+            avg_delta_t = msg_times.MovingAverageDelta(5);
             std::cout << "Elapsed time: " << delta_t << std::endl;
         }
 
@@ -170,18 +168,15 @@ int main()
         if (is_first_message)
         {
             // Seed controllers with initial error measurements.
-            pid_position.TrackError(position_error, delta_t);
+            pid_steering.TrackError(position_error, delta_t);
             pid_speed.TrackError(speed_error, delta_t);
         }
         else
         {
-            // Use PID controller to correct position error.
-            double pos_adj = pid_position.TrackError(position_error, delta_t);
-            
-            // Compute steering adjustment from position correction. Simulator 
-            // interprets turn angle = adjustment * (25 degrees), and simulator
-            // requires adjustment clamped to [-1,1].
-            steer_adj = atan2(pos_adj, target_speed/2) / deg2rad(MAX_TURN_ANGLE);
+            // Use PID controller to correct steering, and scale correction for
+            // speed. Simulator requires steering correction clamped to [-1,1].
+            steer_adj = pid_steering.TrackError(position_error, delta_t);
+            steer_adj *= (1.0 - (speed/100.0));
             steer_adj = clamp(steer_adj, -1.0, 1.0);
 
             // Use PID controller to correct speed. Simulator requires throttle 
@@ -237,3 +232,4 @@ int main()
     }
     h.run();
 }
+
