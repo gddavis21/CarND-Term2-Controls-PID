@@ -11,7 +11,7 @@ The plug-in is required to utilize 1 or more PID Control based algorithms for co
 
 ## Explanation of PID Control
 
-PID Control is a straightforward and very popular approach for implementing a control systems feedback loop. The idea of PID Control is to regularly receive error measurements of from the control system, and respond with error correction values that drive the system toward zero error in an efficient and stable manner.
+PID Control is a straightforward and very popular approach for implementing a control systems feedback loop. The idea of PID Control is to regularly receive error measurements from the control system, and respond with error correction values that drive the system toward zero error in an efficient and stable manner.
 
 PID stands for "Proportional-Integral-Derivative" and represents the basic strategy of the algorithm. PID Control decomposes the input error into 3 component parts--the proportional, integral and derivative terms--and computes the correction as a weighted sum of these terms.
   * The proportional term is simply the current error measurement.
@@ -29,7 +29,7 @@ How does a weighted sum of proportional, integral and derivative terms result in
 
 My process for PID parameter tuning was relatively simple and entirely manual. I started with zero derivative & integral gain, and a very small proportional gain. I gradually increased proportional and derivative gain, looking for just enough proportional gain to steer the car through the corners, and just enough derivative gain to keep the car from getting into too much oscillation.
 
-After I was satisfied with the proportional and derivative gains, I added a very small integral gain to counteract the very small steering bias in the system. I really didn't notice much effect from the integral gain, but left it at a small value.
+After I was satisfied with the proportional and derivative gains, I added a very small integral gain to counteract the small steering bias in the system. I really didn't notice much effect from the integral gain, but left it at a small value.
 
 ## Implementation Notes
 
